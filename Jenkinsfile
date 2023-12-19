@@ -9,7 +9,7 @@ pipeline{
     }
     post {
         always {
-            mail bcc: '', body: 'Build React Native', cc: 'tamiyabuild@gmail.com', from: '', replyTo: '', subject: 'Build React Native', to: 'tamiyabuild@gmail.com'
+            mail bcc: '', cc: 'tamiyabuild@gmail.com', from: '', replyTo: '', to: 'tamiyabuild@gmail.com'
         }
     }
 }
