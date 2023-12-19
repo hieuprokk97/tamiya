@@ -11,14 +11,14 @@ pipeline{
     success {
         script {
             mail to: 'tamiyabuild@gmail.com',
-                 subject: 'Build thành công',
+                 subject: 'Build thành công tamiya_client',
                  body: 'Build thành công'
         }
     }
     failure {
         script {
             mail to: 'tamiyabuild@gmail.com',
-                 subject: 'Build lỗi',
+                 subject: 'Build lỗi tamiya_client',
                  body: 'Build lỗi'
         }
     }
