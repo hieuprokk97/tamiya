@@ -9,7 +9,7 @@ pipeline{
     }
     post {
         always {
-            mail bcc: '', cc: 'tamiyabuild@gmail.com', from: '', replyTo: '', to: 'tamiyabuild@gmail.com'
+            mail bcc: '', body: '', cc: 'tamiyabuild@gmail.com', from: '', replyTo: '', subject: '', to: 'tamiyabuild@gmail.com'
         }
     }
 }
