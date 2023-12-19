@@ -43,10 +43,8 @@ export function Home() {
   const addRow = async () => {
     const result = createUser(inputValue, serverURL);
     await result.then((value) => {
-      console.log("🚀 ~ value:", value)
       return setNewRow(value)
     })
-    console.log("🚀 ~ newRow:", newRow);
     setData([...data, newRow]);
     setNewRow({});
     setInputValue("");
