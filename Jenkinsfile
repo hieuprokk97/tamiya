@@ -7,4 +7,9 @@ pipeline{
             }
         }
     }
+    post {
+        always {
+            mail bcc: '', body: '', cc: 'tamiyabuild@gmail.com', from: '', replyTo: '', subject: 'Build React Native', to: 'tamiyabuild@gmail.com'
+        }
+    }
 }
