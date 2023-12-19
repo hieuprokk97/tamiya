@@ -12,14 +12,14 @@ pipeline{
         script {
             mail to: 'tamiyabuild@gmail.com',
                  subject: 'Build thành công',
-                 body: 'Build thành công tại ${BUILD_URL}'
+                 body: 'Build thành công'
         }
     }
     failure {
         script {
             mail to: 'tamiyabuild@gmail.com',
                  subject: 'Build lỗi',
-                 body: 'Build lỗi tại ${BUILD_URL}'
+                 body: 'Build lỗi'
         }
     }
 }
