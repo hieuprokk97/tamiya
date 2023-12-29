@@ -15,16 +15,31 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.thinhbuivien.tamiya"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "config": {
+        "signingConfig": {
+          "keystorePath": "./@thinhbuivien__tamiya.bak.jks",
+          "keystorePassword": "79b0a73a97b746318b3742e7a34ab28f",
+          "keyAlias": "QHRoaW5oYnVpdmllbi90YW1peWE=",
+          "keyPassword": "3603b6b8e78c4bb58f57f4fb48d26d8b"
+        }
+      },
+      "package": "com.thinhbuivien.tamiya"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2f00f56c-37e1-4efb-9ba4-c8594d23d45a"
+      }
     }
   }
 }

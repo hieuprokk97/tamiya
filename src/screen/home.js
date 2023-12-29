@@ -1,60 +1,108 @@
-import React, { Component, useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState, version } from "react";
 import {
   View,
   Text,
-  Button,
   StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
   FlatList,
   Alert,
+  Touchable,
+  TouchableOpacity,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import CustomInput from "../component/CustomInput";
 import CustomButton from "../component/CustomButton";
-import DropDownComponent from "../component/DropDown/DropDown";
-import axios from "axios";
-import { Table, Row, Rows } from "react-native-table-component";
 import createUser from "../logic/createUser";
 import getUser from "../logic/getUser";
+import removeUserAll from "../logic/deleteAllUser";
+import deleteUser from "../logic/deleteUser";
 
 export function Home() {
   const [data, setData] = useState([]);
-  const [newRow, setNewRow] = useState("");
   const [selectedValue, setSelectedValue] = useState("");
   const [inputValue, setInputValue] = useState("");
-  const serverURL = "http://172.16.4.227:3000";
+  const serverURL = "http://172.16.1.1:3000";
 
-  const resetButton = () => {
-    setData([]);
-  };
   useEffect(() => {
     getAllUser(serverURL);
   }, []);
   const getAllUser = async (url) => {
     try {
       const newData = await getUser(url);
-      setData(newData);
+      setData([...newData]);
+    } catch (err) {}
+  };
+  const addRow = async () => {
+    if (!inputValue) {
+      Alert.alert("Lỗi", "Vui lòng nhập tên");
+      return;
+    }
+    const result = createUser(inputValue, serverURL);
+
+    await result.then((value) => {
+      if (value.message) {
+        Alert.alert("Thông báo", value.message);
+        setInputValue("");
+        return;
+      } else {
+        setData((preValue) => [...preValue, value]);
+        setInputValue("");
+        return;
+      }
+    });
+  };
+  const resetButton = () => {
+    if (data.length > 0) {
+      Alert.alert(
+        "Xác nhận",
+        "Bạn có chắc chắn muốn xóa?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "OK",
+            onPress: () => {
+              // Xử lý logic khi nhấn nút OK
+              removeUserAll(serverURL);
+              setData([]);
+            },
+          },
+        ],
+        { cancelable: false }
+      );
+    } else {
+      Alert.alert(
+        "Xóa thất bại",
+        "Không có dữ liệu để xóa", // Đây là tiêu đề của Alert
+        [{ text: "OK", onPress: () => console.log("Button OK pressed") }]
+      );
+    }
+  };
+  const removeUser = async (index) => {
+    try {
+      await deleteUser(serverURL, index);
+      const newItems = [...data];
+      newItems.splice(index, 1);
+      newItems.forEach((item, i) => {
+        item.id = i + 1; // Assuming IDs are 1-based
+      });
+      setData(newItems);
     } catch (err) {
       console.log("🚀 ~ err:", err);
     }
   };
-  const addRow = async () => {
-    const result = createUser(inputValue, serverURL);
-    await result.then((value) => {
-      return setNewRow(value)
-    })
-    setData([...data, newRow]);
-    setNewRow({});
-    setInputValue("");
-  };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.tableRow}>
-      <Text style={styles.cell}>{item.id}</Text>
-      <Text style={styles.cell}>{item.name}</Text>
-      <Text style={styles.cell}>{item.score}</Text>
+  const renderItem = ({ item, index }) => (
+    <View>
+      <TouchableOpacity
+        style={styles.tableRow}
+        onPress={() => removeUser(index)}
+      >
+        <Text style={styles.cell}>{item.id}</Text>
+        <Text style={styles.cell}>{item.name}</Text>
+        <Text style={styles.cell}>{item.score}</Text>
+      </TouchableOpacity>
     </View>
   );
 
@@ -80,12 +128,12 @@ export function Home() {
         <FlatList
           data={data}
           renderItem={renderItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item, index) => index.toString()}
         />
       </View>
       <View style={styles.totalView}>
         <Text style={styles.totalText}>
-          Tổng số lượng người tham gia: {data.length}
+          Tổng số lượng người tham gia: {data?.length}
         </Text>
       </View>
       <View style={styles.comboBoxView}>
@@ -156,7 +204,7 @@ const styles = StyleSheet.create({
     padding: 10,
     alignItems: "center",
     flexDirection: "row",
-    width: "50%",
+    width: "53%",
   },
   option: {
     fontSize: 16,

@@ -5,7 +5,7 @@ const createUser = async (name, serverURL) => {
   try {
     const result = await axios.post(`${serverURL}/user/create`, { name });
     if (result.data.status !== 200) {
-      Alert.alert("Error", result.data.message);
+      return { message: result.data.message };
     }
     return {
       id: result.data.data.id,
