@@ -3,7 +3,7 @@ import React from "react";
 
 const styles = StyleSheet.create({
   container: {
-    width: "100%",
+    width: "90%",
     padding: 15,
     marginVertical: 5,
     alignItems: "center",

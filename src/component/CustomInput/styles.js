@@ -11,9 +11,8 @@ const styles= StyleSheet.create({
 
         paddingHorizontal: 10,
         marginVertical: 5,
-        paddingVertical: 10
+        paddingVertical: 10,
     },
-
 })
 
 export default styles

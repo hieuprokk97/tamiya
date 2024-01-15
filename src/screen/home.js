@@ -1,4 +1,4 @@
-import React, { useEffect, useState, version } from "react";
+import React, { useEffect, useState, version, useRef } from "react";
 import {
   View,
   Text,
@@ -8,27 +8,42 @@ import {
   Touchable,
   TouchableOpacity,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { Picker } from "@react-native-picker/picker";
 import CustomInput from "../component/CustomInput";
 import CustomButton from "../component/CustomButton";
-import createUser from "../logic/createUser";
-import getUser from "../logic/getUser";
-import removeUserAll from "../logic/deleteAllUser";
-import deleteUser from "../logic/deleteUser";
-
+import createUser from "../logic/create/createUser";
+import getUser from "../logic/get/getUser";
+import removeUserAll from "../logic/delete/deleteAllUser";
+import deleteUser from "../logic/delete/deleteUser";
+import createRaces from "../logic/create/createRaces";
+import { useSelector, useDispatch } from "react-redux";
+import { updateRound, updateSemiFinal } from "../redux/slice/counterSlice";
+import createRound from "../logic/create/createRound";
+import { SERVER_URL } from "@env";
+const serverURL = SERVER_URL;
 export function Home() {
+  const dispatch = useDispatch();
+  const flatListRef = React.useRef(null);
+  const navigation = useNavigation();
   const [data, setData] = useState([]);
-  const [selectedValue, setSelectedValue] = useState("");
+  const [semiFinalValue, setSemiFinalValue] = useState("");
+  const [roundValue, setRoundValue] = useState("");
   const [inputValue, setInputValue] = useState("");
-  const serverURL = "http://172.16.1.1:3000";
-
+  const [isButtonDisabled, setButtonDisabled] = useState(false);
+  const [isButtonResetDisable, setButtonResetDisable] = useState(false);
   useEffect(() => {
     getAllUser(serverURL);
   }, []);
   const getAllUser = async (url) => {
     try {
       const newData = await getUser(url);
-      setData([...newData]);
+      if (!newData.length) {
+        setButtonResetDisable(true);
+        setButtonDisabled(true);
+      } else {
+        setData([...newData]);
+      }
     } catch (err) {}
   };
   const addRow = async () => {
@@ -46,6 +61,8 @@ export function Home() {
       } else {
         setData((preValue) => [...preValue, value]);
         setInputValue("");
+        setButtonDisabled(false);
+        setButtonResetDisable(false);
         return;
       }
     });
@@ -66,6 +83,8 @@ export function Home() {
               // Xử lý logic khi nhấn nút OK
               removeUserAll(serverURL);
               setData([]);
+              setButtonDisabled(true);
+              setButtonResetDisable(true);
             },
           },
         ],
@@ -88,9 +107,29 @@ export function Home() {
         item.id = i + 1; // Assuming IDs are 1-based
       });
       setData(newItems);
+      if (data.length == 1) {
+        setButtonDisabled(true);
+        setButtonResetDisable(true);
+      }
     } catch (err) {
       console.log("🚀 ~ err:", err);
     }
+  };
+  const handleConfirm = async () => {
+    dispatch(updateRound(roundValue));
+    dispatch(updateSemiFinal(semiFinalValue));
+    setRoundValue("");
+    setSemiFinalValue("");
+    const response = createRaces(roundValue, semiFinalValue, serverURL);
+    await response.then(async (value) => {
+      if (value.status == 400) {
+        Alert.alert("Lỗi!!!", value.message);
+      } else {
+        await createRound(roundValue, serverURL);
+        navigation.navigate("Races");
+        setButtonDisabled(true);
+      }
+    });
   };
 
   const renderItem = ({ item, index }) => (
@@ -112,12 +151,16 @@ export function Home() {
         <Text style={styles.title}>TAMIYA</Text>
       </View>
       <View style={styles.viewInput}>
-        <CustomInput
-          placeholder={"Điền tên người chơi..."}
-          onChangText={setInputValue}
-          value={inputValue}
-        />
-        <CustomButton text={"NHẬP"} onPress={addRow} />
+        <View style={{ width: "70%", paddingHorizontal: 5, paddingStart: 15 }}>
+          <CustomInput
+            placeholder={"Điền tên người chơi..."}
+            onChangeText={setInputValue}
+            value={inputValue}
+          />
+        </View>
+        <View style={{ width: "40%" }}>
+          <CustomButton text={"NHẬP"} onPress={addRow} />
+        </View>
       </View>
       <View style={styles.table}>
         <View style={styles.tableHeader}>
@@ -126,9 +169,11 @@ export function Home() {
           <Text style={styles.headerCell}>Score</Text>
         </View>
         <FlatList
+          ref={flatListRef}
           data={data}
           renderItem={renderItem}
           keyExtractor={(item, index) => index.toString()}
+          onContentSizeChange={() => flatListRef.current.scrollToEnd()}
         />
       </View>
       <View style={styles.totalView}>
@@ -138,19 +183,51 @@ export function Home() {
       </View>
       <View style={styles.comboBoxView}>
         <View style={styles.viewComboText}>
-          <Text style={styles.comboText}>Số Vòng Đua</Text>
+          <Text style={styles.comboText}>Số Round</Text>
         </View>
-        <Picker
-          selectedValue={selectedValue}
-          onValueChange={(itemChange) => setSelectedValue(itemChange)}
-        >
-          <Picker.Item label="3" value="3" style={styles.option} />
-          <Picker.Item label="5" value="5" style={styles.option} />
-        </Picker>
+        <View style={styles.roundTextStyle}>
+          <CustomInput
+            placeholder={"Điền số round..."}
+            onChangeText={setRoundValue}
+            value={roundValue}
+            keyboardType="numeric"
+          />
+        </View>
+      </View>
+      <View style={styles.comboBoxView}>
+        <View style={styles.viewComboText}>
+          <Text style={styles.comboText}>Số người vào Semifinal</Text>
+        </View>
+        <View style={styles.roundTextStyle}>
+          <CustomInput
+            placeholder={"Điền số lượng..."}
+            onChangeText={setSemiFinalValue}
+            value={semiFinalValue}
+            keyboardType="numeric"
+          />
+        </View>
       </View>
       <View style={styles.resetButton}>
-        <CustomButton text={"Confirm"} />
-        <CustomButton text={"Reset"} onPress={resetButton} />
+        <TouchableOpacity
+          style={[
+            styles.button,
+            { backgroundColor: isButtonDisabled ? "gray" : "blue" },
+          ]}
+          onPress={handleConfirm}
+          disabled={isButtonDisabled}
+        >
+          <Text style={styles.buttonText}>Confirm</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            { backgroundColor: isButtonResetDisable ? "gray" : "blue" },
+          ]}
+          onPress={resetButton}
+          disabled={isButtonResetDisable}
+        >
+          <Text style={styles.buttonText}>Reset</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -175,14 +252,12 @@ const styles = StyleSheet.create({
   },
   viewInput: {
     marginVertical: 10,
-    marginStart: 10,
-    width: "50%",
+    width: "90%",
     flexDirection: "row",
-    justifyContent: "space-between",
   },
   table: {
     padding: 16,
-    height: "25%",
+    height: 400,
   },
   headerText: {
     textTransform: "uppercase",
@@ -204,6 +279,7 @@ const styles = StyleSheet.create({
     padding: 10,
     alignItems: "center",
     flexDirection: "row",
+    justifyContent: "space-between",
     width: "53%",
   },
   option: {
@@ -239,5 +315,31 @@ const styles = StyleSheet.create({
   cell: {
     flex: 1,
     textAlign: "center",
+  },
+  picker: {
+    borderColor: "gray", // Màu viền
+    borderWidth: 1, // Độ rộng viền
+    borderRadius: 5, // Độ cong của góc (tùy chọn)
+    overflow: "hidden",
+    marginHorizontal: 15,
+  },
+  roundTextStyle: {
+    paddingStart: 15,
+  },
+  buttonConfirm: {
+    width: "100%",
+    paddingStart: 5,
+  },
+  button: {
+    padding: 10,
+    borderRadius: 5,
+    width: "90%",
+    marginStart: 10,
+    backgroundColor: "white",
+  },
+  buttonText: {
+    color: "white",
+    textAlign: "center",
+    fontSize: 20,
   },
 });
